@@ -1,0 +1,1072 @@
+Script started on 2026-10-21 23:21:11-05:00 [TERM="xterm-256color" TTY="/dev/pts/0" COLUMNS="120" LINES="30"]
+[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ exit[2Pls
+[?2004lKDTree.cpp  KDTree.h  main.cpp  [0m[01;32mrobot[0m  robot.out
+[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ cat KDTree.h
+[?2004l#ifndef KDTREE_H
+#define KDTREE_H
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+// Store information about an object
+struct Object {
+    string name;
+    int x;
+    int y;
+
+    Object(string objectName, int objectX, int objectY);
+};
+
+// Each node stores one object
+struct Node {
+    Object object;
+    Node* left;
+    Node* right;
+
+    Node(const Object& value);
+};
+
+class KDTree {
+private:
+    Node* root;
+    int count;
+
+    // Functions used inside the KD-Tree
+    Node* insertNode(Node* current, const Object& object, int depth);
+
+    const Node* searchNode(const Node* current,
+                           int x, int y, int depth) const;
+
+    const Node* searchName(const Node* current,
+                           const string& name) const;
+
+    void nearestNode(const Node* current, int x, int y,
+                     int depth, const Node*& best,
+                     long long& bestDistance) const;
+
+    void collectObjects(const Node* current,
+                        vector<Object>& objects) const;
+
+    void printTree(const Node* current, const string& prefix,
+                   bool lastChild, char side, int depth) const;
+
+    void clear(Node* current);
+
+public:
+    KDTree();
+    ~KDTree();
+
+    // Prevent copying the tree by mistake
+    KDTree(const KDTree&) = delete;
+    KDTree& operator=(const KDTree&) = delete;
+
+    bool addObject(const string& name, int x, int y);
+
+    const Object* searchObject(int x, int y) const;
+    const Object* searchObjectByName(const string& name) const;
+
+    const Object* findNearest(int x, int y) const;
+
+    bool removeObject(int x, int y);
+    bool removeObjectByName(const string& name);
+
+    void displayObjects() const;
+    void displayTree() const;
+
+    int getCount() const;
+};
+
+#endif[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ cat KDTree.h[Kcpp
+[?2004l#include "KDTree.h"
+
+using namespace std;
+
+// Constructor for Object
+Object::Object(string objectName, int objectX, int objectY)
+    : name(objectName), x(objectX), y(objectY) {
+}
+
+// Constructor for Node
+Node::Node(const Object& value)
+    : object(value), left(nullptr), right(nullptr) {
+}
+
+// Create an empty KD-Tree
+KDTree::KDTree() {
+    root = nullptr;
+    count = 0;
+}
+
+// Delete tree nodes when the program ends
+KDTree::~KDTree() {
+    clear(root);
+}
+
+// Remove all nodes from memory
+void KDTree::clear(Node* current) {
+    if (current == nullptr) {
+        return;
+    }
+
+    clear(current->left);
+    clear(current->right);
+
+    delete current;
+}
+
+// Insert an object into the KD-Tree
+Node* KDTree::insertNode(Node* current,
+                         const Object& object, int depth) {
+
+    if (current == nullptr) {
+        return new Node(object);
+    }
+
+    // Even levels compare X
+    if (depth % 2 == 0) {
+
+        if (object.x < current->object.x) {
+            current->left = insertNode(
+                current->left, object, depth + 1);
+        } else {
+            current->right = insertNode(
+                current->right, object, depth + 1);
+        }
+    }
+
+    // Odd levels compare Y
+    else {
+
+        if (object.y < current->object.y) {
+            current->left = insertNode(
+                current->left, object, depth + 1);
+        } else {
+            current->right = insertNode(
+                current->right, object, depth + 1);
+        }
+    }
+
+    return current;
+}
+
+// Search for an object using X and Y coordinates
+const Node* KDTree::searchNode(const Node* current,
+                              int x, int y, int depth) const {
+
+    if (current == nullptr) {
+        return nullptr;
+    }
+
+    if (current->object.x == x &&
+        current->object.y == y) {
+        return current;
+    }
+
+    if (depth % 2 == 0) {
+
+        if (x < current->object.x) {
+            return searchNode(current->left, x, y, depth + 1);
+        } else {
+            return searchNode(current->right, x, y, depth + 1);
+        }
+    } else {
+
+        if (y < current->object.y) {
+            return searchNode(current->left, x, y, depth + 1);
+        } else {
+            return searchNode(current->right, x, y, depth + 1);
+        }
+    }
+}
+
+// Search for an object using its name
+const Node* KDTree::searchName(const Node* current,
+                               const string& name) const {
+
+    if (current == nullptr) {
+        return nullptr;
+    }
+
+    // Check the current object
+    if (current->object.name == name) {
+        return current;
+    }
+
+    // Search the left side
+    const Node* found = searchName(current->left, name);
+
+    if (found != nullptr) {
+        return found;
+    }
+
+    // Search the right side
+    return searchName(current->right, name);
+}
+
+// Add a new object
+bool KDTree::addObject(const string& name, int x, int y) {
+
+    // Do not allow an empty name
+    if (name.find_first_not_of(" \t") == string::npos) {
+        return false;
+    }
+
+    // Do not allow duplicate names
+    if (searchObjectByName(name) != nullptr) {
+        return false;
+    }
+
+    // Do not allow duplicate coordinates
+    if (searchObject(x, y) != nullptr) {
+        return false;
+    }
+
+    Object newObject(name, x, y);
+
+    root = insertNode(root, newObject, 0);
+    count++;
+
+    return true;
+}
+
+// Find an object using coordinates
+const Object* KDTree::searchObject(int x, int y) const {
+
+    const Node* found = searchNode(root, x, y, 0);
+
+    if (found == nullptr) {
+        return nullptr;
+    }
+
+    return &found->object;
+}
+
+// Find an object using its name
+const Object* KDTree::searchObjectByName(
+    const string& name) const {
+
+    const Node* found = searchName(root, name);
+
+    if (found == nullptr) {
+        return nullptr;
+    }
+
+    return &found->object;
+}
+
+// Calculate squared distance
+static long long distanceSquared(int x1, int y1,
+                                 int x2, int y2) {
+
+    long long dx = (long long)x1 - x2;
+    long long dy = (long long)y1 - y2;
+
+    return dx * dx + dy * dy;
+}
+
+// Search for the nearest object
+void KDTree::nearestNode(const Node* current,
+                         int x, int y, int depth,
+                         const Node*& best,
+                         long long& bestDistance) const {
+
+    if (current == nullptr) {
+        return;
+    }
+
+    // Calculate distance to the current object
+    long long distance = distanceSquared(
+        x, y, current->object.x, current->object.y);
+
+    // Update the nearest object if needed
+    if (best == nullptr || distance < bestDistance) {
+        best = current;
+        bestDistance = distance;
+    }
+
+    // Compare X or Y depending on the level
+    long long difference;
+
+    if (depth % 2 == 0) {
+        difference = (long long)x - current->object.x;
+    } else {
+        difference = (long long)y - current->object.y;
+    }
+
+    const Node* first;
+    const Node* second;
+
+    // Choose which side to search first
+    if (difference < 0) {
+        first = current->left;
+        second = current->right;
+    } else {
+        first = current->right;
+        second = current->left;
+    }
+
+    // Search the closer side
+    nearestNode(first, x, y, depth + 1,
+                best, bestDistance);
+
+    // Search the other side if it may contain a closer object
+    if (difference * difference <= bestDistance) {
+        nearestNode(second, x, y, depth + 1,
+                    best, bestDistance);
+    }
+}
+
+// Start searching for the nearest object
+const Object* KDTree::findNearest(int x, int y) const {
+
+    const Node* best = nullptr;
+    long long bestDistance = 0;
+
+    nearestNode(root, x, y, 0, best, bestDistance);
+
+    if (best == nullptr) {
+        return nullptr;
+    }
+
+    return &best->object;
+}
+
+// Collect all objects from the tree
+void KDTree::collectObjects(const Node* current,
+                            vector<Object>& objects) const {
+
+    if (current == nullptr) {
+        return;
+    }
+
+    objects.push_back(current->object);
+
+    collectObjects(current->left, objects);
+    collectObjects(current->right, objects);
+}
+
+// Remove an object using coordinates
+bool KDTree::removeObject(int x, int y) {
+
+    if (searchObject(x, y) == nullptr) {
+        return false;
+    }
+
+    // Save all objects
+    vector<Object> objects;
+    collectObjects(root, objects);
+
+    // Clear the old tree
+    clear(root);
+    root = nullptr;
+    count = 0;
+
+    // Add all objects except the removed object
+    for (int i = 0; i < (int)objects.size(); i++) {
+
+        if (objects[i].x != x || objects[i].y != y) {
+            addObject(objects[i].name,
+                      objects[i].x,
+                      objects[i].y);
+        }
+    }
+
+    return true;
+}
+
+// Remove an object using its name
+bool KDTree::removeObjectByName(const string& name) {
+
+    const Object* object = searchObjectByName(name);
+
+    if (object == nullptr) {
+        return false;
+    }
+
+    // Save the coordinates before removing the object
+    int x = object->x;
+    int y = object->y;
+
+    return removeObject(x, y);
+}
+
+// Display all objects
+void KDTree::displayObjects() const {
+
+    if (root == nullptr) {
+        cout << "No objects have been added yet.\n";
+        return;
+    }
+
+    vector<Object> objects;
+    collectObjects(root, objects);
+
+    cout << "\nObjects in the robot's environment ("
+         << count << "):\n";
+
+    for (int i = 0; i < (int)objects.size(); i++) {
+
+        cout << i + 1 << ". "
+             << objects[i].name
+             << " (" << objects[i].x
+             << ", " << objects[i].y << ")\n";
+    }
+}
+
+// Print the branches of the tree
+void KDTree::printTree(const Node* current,
+                       const string& prefix,
+                       bool lastChild, char side,
+                       int depth) const {
+
+    if (current == nullptr) {
+        return;
+    }
+
+    cout << prefix;
+
+    if (lastChild) {
+        cout << "`-- ";
+    } else {
+        cout << "|-- ";
+    }
+
+    cout << side << ": "
+         << current->object.name
+         << " (" << current->object.x
+         << ", " << current->object.y
+         << ") [Compare ";
+
+    if (depth % 2 == 0) {
+        cout << "X";
+    } else {
+        cout << "Y";
+    }
+
+    cout << "]\n";
+
+    string nextPrefix = prefix;
+
+    if (lastChild) {
+        nextPrefix += "    ";
+    } else {
+        nextPrefix += "|   ";
+    }
+
+    if (current->left != nullptr) {
+        printTree(current->left, nextPrefix,
+                  current->right == nullptr,
+                  'L', depth + 1);
+    }
+
+    if (current->right != nullptr) {
+        printTree(current->right, nextPrefix,
+                  true, 'R', depth + 1);
+    }
+}
+
+// Display the complete KD-Tree
+void KDTree::displayTree() const {
+
+    if (root == nullptr) {
+        cout << "KD-Tree is empty.\n";
+        return;
+    }
+
+    cout << "\nROOT: "
+         << root->object.name
+         << " (" << root->object.x
+         << ", " << root->object.y
+         << ") [Compare X]\n";
+
+    if (root->left != nullptr) {
+        printTree(root->left, "",
+                  root->right == nullptr,
+                  'L', 1);
+    }
+
+    if (root->right != nullptr) {
+        printTree(root->right, "",
+                  true, 'R', 1);
+    }
+}
+
+// Return the number of objects
+int KDTree::getCount() const {
+    return count;
+}
+[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ cat KDTree.cpp[2Phcpp[C[1P.cpp[1P.cpp[1P.cpp[1P.cpp[1P.cpp[1P.cppm.cppa.cppi.cppn.cpp
+[?2004l#include "KDTree.h"
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <iomanip>
+#include <limits>
+#include <cstdlib>
+
+using namespace std;
+
+// Store the robot's location
+class Robot {
+private:
+    int x;
+    int y;
+    bool locationSet;
+
+public:
+    Robot() {
+        x = 0;
+        y = 0;
+        locationSet = false;
+    }
+
+    void setLocation(int newX, int newY) {
+        x = newX;
+        y = newY;
+        locationSet = true;
+    }
+
+    int getX() const {
+        return x;
+    }
+
+    int getY() const {
+        return y;
+    }
+
+    bool hasLocation() const {
+        return locationSet;
+    }
+};
+
+// Read a whole number from the user
+int readNumber(const string& message) {
+
+    int number;
+
+    while (true) {
+        cout << message;
+
+        if (cin >> number) {
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            return number;
+        }
+
+        if (cin.eof()) {
+            cout << "\nInput ended. Closing program.\n";
+            exit(0);
+        }
+
+        cout << "Invalid input. Please enter a whole number.\n";
+
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    }
+}
+
+// Calculate straight-line distance
+double distanceBetween(int x1, int y1, int x2, int y2) {
+
+    double dx = (double)x1 - x2;
+    double dy = (double)y1 - y2;
+
+    return sqrt(dx * dx + dy * dy);
+}
+
+// Display the main menu
+void showMenu() {
+
+    cout << "\n========================================================\n";
+    cout << "  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM\n";
+    cout << "========================================================\n";
+    cout << "1. Add Object to Robot's Environment\n";
+    cout << "2. Search Object by Name\n";
+    cout << "3. Set / Update Robot's Current Location\n";
+    cout << "4. Find Nearest Object to Robot\n";
+    cout << "5. Measure Distance from Robot to Selected Object\n";
+    cout << "6. Display All Objects in Robot's Environment\n";
+    cout << "7. Display KD-Tree Structure\n";
+    cout << "8. Remove Object by Name\n";
+    cout << "9. Exit System\n";
+    cout << "========================================================\n";
+}
+
+int main() {
+
+    KDTree tree;
+    Robot robot;
+
+    // Show distances with two decimal places
+    cout << fixed << setprecision(2);
+
+    while (true) {
+
+        showMenu();
+
+        int choice = readNumber("Enter your choice: ");
+
+        // Option 9: Exit
+        if (choice == 9) {
+            cout << "Thank you for using the robot location system!\n";
+            break;
+        }
+
+        // Option 1: Add an object
+        if (choice == 1) {
+
+            string name;
+
+            cout << "Enter object name: ";
+            getline(cin, name);
+
+            if (name.find_first_not_of(" \t") == string::npos) {
+                cout << "Object name cannot be empty.\n";
+                continue;
+            }
+
+            int x = readNumber("Enter object X: ");
+            int y = readNumber("Enter object Y: ");
+
+            if (tree.searchObjectByName(name) != nullptr) {
+                cout << "An object with this name already exists.\n";
+            }
+            else if (tree.searchObject(x, y) != nullptr) {
+                cout << "An object already exists at this location.\n";
+            }
+            else if (tree.addObject(name, x, y)) {
+                cout << "Object added successfully!\n";
+            }
+        }
+
+        // Option 2: Search for an object by name
+        else if (choice == 2) {
+
+            string name;
+
+            cout << "Enter object name: ";
+            getline(cin, name);
+
+            const Object* object = tree.searchObjectByName(name);
+
+            if (object != nullptr) {
+
+                cout << "Object found successfully!\n";
+                cout << "Object name: " << object->name << "\n";
+                cout << "Object location: ("
+                     << object->x << ", "
+                     << object->y << ")\n";
+            }
+            else {
+                cout << "Object not found in the robot's environment.\n";
+            }
+        }
+
+        // Option 3: Set or update robot location
+        else if (choice == 3) {
+
+            int x = readNumber("Enter robot X: ");
+            int y = readNumber("Enter robot Y: ");
+
+            robot.setLocation(x, y);
+
+            cout << "Robot location saved: ("
+                 << robot.getX() << ", "
+                 << robot.getY() << ")\n";
+        }
+
+        // Option 4: Find the nearest object
+        else if (choice == 4) {
+
+            if (!robot.hasLocation()) {
+                cout << "Please set the robot location first (Option 3).\n";
+                continue;
+            }
+
+            const Object* object =
+                tree.findNearest(robot.getX(), robot.getY());
+
+            if (object == nullptr) {
+                cout << "No objects available. Add an object first.\n";
+            }
+            else {
+
+                cout << "Robot location: ("
+                     << robot.getX() << ", "
+                     << robot.getY() << ")\n";
+
+                cout << "Nearest object: "
+                     << object->name
+                     << " (" << object->x
+                     << ", " << object->y << ")\n";
+
+                cout << "Distance: "
+                     << distanceBetween(
+                            robot.getX(), robot.getY(),
+                            object->x, object->y)
+                     << " units\n";
+            }
+        }
+
+        // Option 5: Measure distance using object name
+        else if (choice == 5) {
+
+            if (!robot.hasLocation()) {
+                cout << "Please set the robot location first (Option 3).\n";
+                continue;
+            }
+
+            string name;
+
+            cout << "Enter object name: ";
+            getline(cin, name);
+
+            const Object* object = tree.searchObjectByName(name);
+
+            if (object == nullptr) {
+                cout << "Object not found in the robot's environment.\n";
+            }
+            else {
+
+                cout << "Robot location: ("
+                     << robot.getX() << ", "
+                     << robot.getY() << ")\n";
+
+                cout << "Selected object: "
+                     << object->name
+                     << " (" << object->x
+                     << ", " << object->y << ")\n";
+
+                cout << "Distance from robot: "
+                     << distanceBetween(
+                            robot.getX(), robot.getY(),
+                            object->x, object->y)
+                     << " units\n";
+            }
+        }
+
+        // Option 6: Display all objects
+        else if (choice == 6) {
+            tree.displayObjects();
+        }
+
+        // Option 7: Display the KD-Tree structure
+        else if (choice == 7) {
+            tree.displayTree();
+        }
+
+        // Option 8: Remove an object by name
+        else if (choice == 8) {
+
+            string name;
+
+            cout << "Enter object name to remove: ";
+            getline(cin, name);
+
+            if (tree.removeObjectByName(name)) {
+                cout << "Object removed successfully!\n";
+            }
+            else {
+                cout << "Object not found in the robot's environment.\n";
+            }
+        }
+
+        // Invalid menu option
+        else {
+            cout << "Invalid menu choice. Choose 1 to 9.\n";
+        }
+    }
+
+    return 0;
+}[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ cat main.cppKDTree.cpp[2Pmain.cpp[Kcat main.cppKDTree.cpp[2Phls[Kexit[2Plsexit[2Plsexit./robotg++ KDTree.cpp main.cpp -o robot[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[19Ppico main.cppKDTree.cpp[2Pmain.cppg++ KDTree.cpp main.cpp -o robot[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C./robot[Kg++ KDTree.cpp main.cpp -o robot
+[?2004l[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ ./robot
+[?2004l
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 1
+Enter object name: Self   helf A
+Enter object X: 6
+Enter object Y: 8
+Object added successfully!
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 1
+Enter object name: Shelf B
+Enter object X: 5
+Enter object Y: 4
+Object added successfully!
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 1
+Enter object name: Shelf C       Boxes
+Enter object X: 7
+Enter object Y: 5
+Object added successfully!
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 1
+Enter object name: w Worl kstation
+Enter object X: 2
+Enter object Y: 6
+Object added successfully!
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 1
+Enter object name: Charginfg  g  station^[[D                   Charging  S station
+Enter object X: 1
+Enter object Y: 3
+Object added successfully!
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 2
+Enter object name: Shelf b B
+Object found successfully!
+Object name: Shelf B
+Object location: (5, 4)
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 3
+Enter robot X: 4
+Enter robot Y: 6
+Robot location saved: (4, 6)
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 4
+Robot location: (4, 6)
+Nearest object: Workstation (2, 6)
+Distance: 2.00 units
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 5
+Enter object name: Charging  S station
+Robot location: (4, 6)
+Selected object: Chargingstation (1, 3)
+Distance from robot: 4.24 units
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 5
+Enter object name: Boxes
+Robot location: (4, 6)
+Selected object: Boxes (7, 5)
+Distance from robot: 3.16 units
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 6
+
+Objects in the robot's environment (5):
+1. Shelf A (6, 8)
+2. Shelf B (5, 4)
+3. Chargingstation (1, 3)
+4. Workstation (2, 6)
+5. Boxes (7, 5)
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 7
+
+ROOT: Shelf A (6, 8) [Compare X]
+|-- L: Shelf B (5, 4) [Compare Y]
+|   |-- L: Chargingstation (1, 3) [Compare X]
+|   `-- R: Workstation (2, 6) [Compare X]
+`-- R: Boxes (7, 5) [Compare Y]
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 7 8
+Enter object name to remove: Workstation
+Object removed successfully!
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 7
+
+ROOT: Shelf A (6, 8) [Compare X]
+|-- L: Shelf B (5, 4) [Compare Y]
+|   `-- L: Chargingstation (1, 3) [Compare X]
+`-- R: Boxes (7, 5) [Compare Y]
+
+========================================================
+  KD-TREE BASED SMART ROBOT OBJECT LOCATION SYSTEM
+========================================================
+1. Add Object to Robot's Environment
+2. Search Object by Name
+3. Set / Update Robot's Current Location
+4. Find Nearest Object to Robot
+5. Measure Distance from Robot to Selected Object
+6. Display All Objects in Robot's Environment
+7. Display KD-Tree Structure
+8. Remove Object by Name
+9. Exit System
+========================================================
+Enter your choice: 9
+Thank you for using the robot location system!
+[?2004h]0;akashpatel@JA: ~/DSII/KDTree[01;32makashpatel@JA[00m:[01;34m~/DSII/KDTree[00m$ exit
+[?2004lexit
+
+Script done on 2026-10-21 23:30:36-05:00 [COMMAND_EXIT_CODE="0"]
