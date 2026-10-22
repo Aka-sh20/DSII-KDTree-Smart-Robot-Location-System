@@ -192,10 +192,10 @@ The program checks several cases:
 
 > **To complete before submission:** replace each placeholder below with your real, public URL. Your instructor requires the GitHub, YouTube, and LinkedIn pages to connect to one another.
 
-- **YouTube — Part 1 (Theory):** `[ADD_PART_1_YOUTUBE_LINK_HERE]`
-- **YouTube — Part 2 (C++ live demonstration):** `[ADD_PART_2_YOUTUBE_LINK_HERE]`
-- **LinkedIn — Theory post:** `[ADD_LINKEDIN_THEORY_POST_HERE]`
-- **LinkedIn — Practical demonstration post:** `[ADD_LINKEDIN_PRACTICAL_POST_HERE]`
+- **YouTube — Part 1 (Theory):** `[https://youtu.be/10bkCGe_qBs]`
+- **YouTube — Part 2 (C++ live demonstration):** `[https://youtu.be/PgyIM9xZ9gs]`
+- **LinkedIn — Theory post:** `[https://www.linkedin.com/posts/patel-akash-51a395208_kdtree-datastructures-algorithms-share-7519114236837380097-8OZy/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7519114238032949249&highlightedUpdateType=SOCIAL_SHARE&origin=SOCIAL_SHARE&utm_source=share&utm_medium=member_desktop&rcm=ACoAADS84aYB4gqMkxKBoN4DtiRjbRRovxbcl-w]`
+- **LinkedIn — Practical demonstration post:** `[https://www.linkedin.com/posts/patel-akash-51a395208_kdtree-datastructures-datastructuresandalgorithms-share-7519115581892087808-eX5w/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7519115583276126208&highlightedUpdateType=SOCIAL_SHARE&origin=SOCIAL_SHARE&utm_source=share&utm_medium=member_desktop&rcm=ACoAADS84aYB4gqMkxKBoN4DtiRjbRRovxbcl-w]`
 
 Also add this **GitHub repository link** to both YouTube descriptions and the LinkedIn posts. Add YouTube and GitHub links to each LinkedIn post as well, so viewers can move between the three platforms.
 
