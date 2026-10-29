@@ -17,8 +17,8 @@ The poster presents the project motivation, KD-Tree structure and 2D spatial rep
 
 | Path | Description |
 |---|---|
-| `Poster/KARLS_Final_Research_Poster.pptx` | Final submitted PowerPoint poster |
-| `Abstract/KARLS_Revised_Abstract_Akashkumar_Patel.docx` | Editable revised abstract, with keywords and future work |
+| `Poster/KARLS_ACCA_Poster.pdf` | Final submitted PowerPoint poster |
+| `Abstract/KARLS_Abstract_Akashkumar_Patel.pdf` | Editable revised abstract, with keywords and future work |
 | `Diagrams/KARLS_Spatial_Map_and_KDTree_2320x3000.png` | High-resolution coordinate map and KD-Tree figure |
 | `PROJECT_LINKS.md` | Links to main repository, videos, and LinkedIn; fill in after publishing |
 
@@ -32,11 +32,6 @@ The poster presents the project motivation, KD-Tree structure and 2D spatial rep
 - Charging Station: (1, 3)
 - Nearest stored object: **Workstation**, at **2.00 units** from the robot.
 
-## KD-Tree and C++ program
-The full source code (`KDTree.h`, `KDTree.cpp`, `main.cpp`), UML, sample runs, research report, and other existing coursework files should remain in the **main KARLS repository**. This ZIP is an **add-on folder**, not a replacement for the existing repository.
-
 ## Poster presentation and social sharing
-Fill in the links in `PROJECT_LINKS.md`, then copy them into this README and make sure the video description and LinkedIn poster post link back to the public GitHub repository.
-
-## Important verification before publishing
-Review the poster for any remaining template wording (for example, **Contacts**) and ensure the UML matches the final menu's name-based operations. The revised Word abstract here was prepared from the latest approved *draft wording*, not independently confirmed as professor-approved.
+YouTube research poster presentation: [https://youtu.be/kLT_jLbBht0]
+LinkedIn research poster post: [https://www.linkedin.com/posts/patel-akash-51a395208_karls-kdtree-datastructures-share-7521686432609067010-z9Rm/?highlightedUpdateUrn=urn%3Ali%3Aactivity%3A7521686434655744000&highlightedUpdateType=SOCIAL_SHARE&origin=SOCIAL_SHARE&utm_source=share&utm_medium=member_desktop&rcm=ACoAADS84aYB4gqMkxKBoN4DtiRjbRRovxbcl-w]
